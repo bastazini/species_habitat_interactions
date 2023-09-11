@@ -48,4 +48,4 @@ require(clue)
 
 
 require(here); require(reshape); require(jagsUI); require(bipartite); require(igraph)
-require(ggplot2);require(dplyr)
+require(ggplot2);require(dplyr); require(ggExtra)

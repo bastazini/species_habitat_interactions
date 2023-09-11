@@ -10,13 +10,16 @@ source(here ("R", "functions.R"))
 source(here ("R", "packages.R"))
 load(file = here ("data","occupancy_data.RData"))
 
+# correct taxonomy
+
 # coun total N fish
 ns_fish <- length(unique(network_data$peixe))
 # total N corals
 ns_coral <- length(unique(network_data$coral))
 
 # histogram of predictions
-ggplot (network_data, aes (x=pred)) +
+ggplot (network_data ,
+        aes (x=pred)) +
   geom_histogram(binwidth=0.1,fill="yellow", colour="black")+
   facet_wrap(~coral)
 
@@ -69,12 +72,27 @@ sp_analyzed_response$coral<-firstup(sp_analyzed_response$coral)
 
 # a complete functional space per species of coral
 total <- do.call (rbind,extracted_data) # rbind extracted data (with coefficients and CI)
+
+
 # select traits to analysis
 sel_traits <- trait_dataset[which(trait_dataset$scientificName %in% total$peixe),
                             c("Aspect_ratio","Trophic_level","Size_group",
                               "TempPref_max","Depth_max",
                               "log_actual_size",
                               "scientificName")]
+
+
+# select and organize the data (max value among adult and juvenile)
+sel_traits <- (sel_traits %>%
+                      group_by(scientificName) %>%
+                      summarize (log_actual_size = max(log_actual_size),
+                                 Aspect_ratio  = max(Aspect_ratio),
+                                 Trophic_level = max(Trophic_level),
+                                 Size_group = max(Size_group),
+                                 TempPref_max = max(TempPref_max),
+                                 Depth_max = max(Depth_max))
+)
+
 # the correlation between traits
 (cor(sel_traits[,-which(colnames(sel_traits) == "scientificName")], 
      use = "complete.obs"))#  correlation is fine
@@ -135,88 +153,81 @@ plotweb2(data.matrix(m_web),
          data.matrix(m_web_occ),
          method = "normal",
          empty=T,
+         col.interaction = "gray",
+         ybig=1,
          labsize = 0.75,
          spacing=0.01,
-         lab.space	=0.75,
+         lab.space	=0.1,
          method2="normal",
          spacing2=0.01,
-         empty2=T
+         empty2=T,
+         col.interaction2 = "orange" ,
+         col.pred2 = "orange",
+         col.prey2 = "gray80"
 )
 
 dev.off()
 
 
-# trait space
 
+# ----------------------------------
+
+# select traits for spp with some association to corals and coral -associated fish
+# select traits to analysis
+sel_traits_fish <- trait_dataset[which(trait_dataset$scientificName %in% unique(unlist(dimnames(m_web_occ)))),
+                            c("Aspect_ratio","Trophic_level","Size_group",
+                              "TempPref_max","Depth_max",
+                              "log_actual_size",
+                              "scientificName")]
+
+# select and organize the data
+sel_traits_fish <- (sel_traits_fish %>%
+  group_by(scientificName) %>%
+  summarize (log_actual_size = max(log_actual_size),
+             Aspect_ratio  = max(Aspect_ratio),
+             Trophic_level = max(Trophic_level),
+             Size_group = max(Size_group),
+             TempPref_max = max(TempPref_max),
+             Depth_max = max(Depth_max))
+)
+
+
+# trait space comprising the 63 spp.
 # distance matrix (gower)
-gower_matrix <- daisy (apply (sel_traits[,-which(colnames(sel_traits) == "scientificName")],2,scale), 
+gower_matrix <- daisy (apply (sel_traits_fish[,-which(colnames(sel_traits_fish) == "scientificName")],2,scale), 
                        metric=("gower"),
                        type = list (ordratio = "Size_group"))
-
 
 # principal coordinate analysis
 # Building the functional space based on a PCOA 
 pco<-dudi.pco(quasieuclid(gower_matrix), scannf=F, nf=10) # quasieuclid() transformation to make the gower matrix as euclidean. nf= number of axis 
 
-#barplot(pco$eig) # barplot of eigenvalues for each axis 
-(Inertia2<-(pco$eig[1]+pco$eig[2]+pco$eig[3]) /(sum(pco$eig))) # percentage of inertia explained by the two first axes
-# estimate quality of f space
-#quality<-quality_funct_space_fromdist( gower_matrix,  nbdim=10,   
-#                                       plot="quality_funct_space_I") # it will produce a plot (hosted in the root folder)
-## only the frst axis
-(Inertia.first <- (pco$eig[1]) /(sum(pco$eig)))
-## only the frst axis
-(Inertia.scnd <- (pco$eig[2]) /(sum(pco$eig)))
-## only the frst axis
-(Inertia.trd <- (pco$eig[3]) /(sum(pco$eig)))
-Inertia.first+Inertia.scnd
-
-## complete space
+##  space
 all_pool <- cbind (pco$li[,1:2],
               ext = F,
-              sp = sel_traits$scientificName)
+              sp = sel_traits_fish$scientificName)
 
 # convex hull
 a_pool <- all_pool [chull(all_pool[,1:2], y = NULL),] # its convex hull
 
+# use species with some relationships (n=63)
+fish_related <- total [which(total$peixe %in% sel_traits_fish$scientificName),]
+fish_related <- fish_related %>%
+                filter (age == "1") # adult fish
 
-# remove species not directly or indirectly associated to corals
-all <- all_pool [which (all_pool$sp %in% unique(unlist(dimnames(m_web_occ)))),]
-# convex hull
-a_ass <- all [chull(all[,1:2], y = NULL),] # its convex hull
-
-# loss of all relative to the provincial trait space
-chull.poly.complete <- Polygon(a_pool[,1:2], hole=F) # complete space
-chull.area.complete <- chull.poly.complete@area # polygon area
-# spp involved with cascading effects
-chull.poly.cascading <- Polygon(a_ass[,1:2], hole=F) # complete space
-chull.area.cascading <- chull.poly.cascading@area # polygon area
-
-# total loss
-chull.area.cascading/chull.area.complete
-
-
-# match ordination and traits
-total<- cbind (total,
-               all[(match (total$peixe, all$sp)),c("A1", "A2")])
-# coral associated space
-c_assoc <-cbind(all, ext1=ifelse(all$sp %in% 
-                                   unique( (sp_analyzed_response$peixe)),T,F))
-c_assoc <-c_assoc[which(c_assoc$ext1==T),]
-c_assoc_set <- c_assoc [chull(c_assoc, y = NULL),]
-
-# functional space loss
+# calculate functional trait space loss
+# based on RFS (Luza et al. 2022)
 RFS_corals <- lapply (seq (1, ns_coral), function (ncoral) { 
   
   # choose corals to remove
   rm_corals <- rownames (m_web)[1:ncoral]
   
   # coral-associated fish
-  coral_associated <- total[which(total$low.coral > 0 & 
-                                  total$estimate.turf <= 0 & 
-                                  total$coral %in% rm_corals),] 
+  coral_associated <- fish_related[which(fish_related$low.coral > 0 & 
+                                           fish_related$estimate.turf <= 0 & 
+                                           fish_related$coral %in% rm_corals),] 
   # reduced space
-  setB<-cbind(all, ext1=ifelse(all$sp %in% 
+  setB<-cbind(all_pool, ext1=ifelse(all_pool$sp %in% 
                                  unique(coral_associated$peixe),T,F))
   pk <-setB[which(setB$ext1==F),]
   f <- pk [chull(pk, y = NULL),] # hull
@@ -275,20 +286,17 @@ analysis_dataset<-rbind (analysis_dataset,
             remain_FD = FD_loss_total))
 
 
-
-
-
-
 # simulating indirect extinctions
 
 RFS_corals_secondary_extinctions <- lapply (seq (1, ns_coral), function (ncoral) { 
   
   # choose corals to remove
   rm_corals <- rownames (m_web)[1:ncoral]
+  
   # coral-associated fish
-  coral_associated <- total[which(total$low.coral > 0 & 
-                                    total$estimate.turf <= 0 & 
-                                    total$coral %in% rm_corals),] 
+  coral_associated <- fish_related[which(fish_related$low.coral > 0 & 
+                                           fish_related$estimate.turf <= 0 & 
+                                           fish_related$coral %in% rm_corals),] 
   
   # associated fish plus those associated with them
   ass_cs <- m_web_occ[unique(coral_associated$peixe),]
@@ -296,7 +304,7 @@ RFS_corals_secondary_extinctions <- lapply (seq (1, ns_coral), function (ncoral)
   all_to_remove <- c(unique(coral_associated$peixe),colnames(ass_cs))
   
   # reduced space
-  setB<-cbind(all, ext1=ifelse(all$sp %in% 
+  setB<-cbind(all_pool, ext1=ifelse(all_pool$sp %in% 
                                  all_to_remove,T,F))
   pk <-setB[which(setB$ext1==F),]
   f <- pk [chull(pk, y = NULL),]
@@ -325,7 +333,6 @@ RFS_corals_secondary_extinctions <- lapply (seq (1, ns_coral), function (ncoral)
   ; # return
   res
 })
-
 
 # total loss
 loss_total_secondary <- lapply  (RFS_corals_secondary_extinctions, function (i) i$RFS)
@@ -400,56 +407,61 @@ analysis_dataset$pred_remain_RFS_secondary <- hyper_curve_secondary_RFS$preds
 
 # project the trait space loss
 # plot
-png (here ("output", "ATC.png"),res= 300,width=15,height=15, units = "cm")
-
-
+png (here ("output", "ATC.png"),width = 20, height = 20,units="cm",res=300)
 
 
 ggplot(analysis_dataset[order(analysis_dataset$remain_coral,decreasing=F),], 
        aes (x= (1-remain_coral), y = remain_fish_associated)) +
   
-  #geom_line( aes(y=remain_fish)) + 
-  geom_point( aes(y=remain_all),linetype=1,size=2,col="black",fill="black",shape=22,alpha=0.5) + 
-  geom_line( aes(y=pred_remain_SR_all),linetype=1,size=1.2, col= "black") + 
-  geom_ribbon( aes(ymax=pred_remain_SR_all),
-               ymin=0,
-               linetype=1,
-               size=1.2, 
-               col = NA,
-               alpha=0.05,
-               fill="black") + 
-  
-  #geom_line( aes(y=remain_fish_associated*100),linetype=1,size=1.2,col="orange") +
-  geom_point( aes(y=remain_SR_secondary),linetype=1,size=2,col="black",shape=19,alpha=0.5) +
-  geom_line( aes(y=pred_remain_SR_secondary),linetype=2,size=1.2,col="black") +
-  geom_ribbon( aes(ymax=pred_remain_SR_secondary),
-               ymin=0,
-               linetype=1,
-               size=1.2, 
-               col = NA,
-               alpha=0.05,
-               fill="black") + 
-  
-  # trait space
-  geom_point( aes(y=remain_FD),linetype=2,size=2,col="orange",fill="orange",shape=22,alpha=0.5) + 
+  # functional diversity
+  # direct loss
+  geom_point( aes(y=remain_FD),linetype=2,size=3,col="orange",fill="orange",shape=22,alpha=1) + 
   geom_line( aes(y=pred_remain_RFS_associated),linetype=1,size=1.2,col="orange") + 
   geom_ribbon( aes(ymax=pred_remain_RFS_associated),
                ymin=0,
                linetype=1,
                size=1.2, 
                col = NA,
-               alpha=0.05,
+               alpha=0.3,
                fill="orange") + 
   
-  geom_point( aes(y=remain_RFS_secondary),linetype=2,size=2, col = "orange",shape=19,alpha=0.5) + 
+  
+  
+  # indirect loss
+  geom_point( aes(y=remain_RFS_secondary),linetype=2,size=3, col = "orange",shape=19,alpha=1) + 
   geom_line( aes(y=pred_remain_RFS_secondary),linetype=2,size=1.2, col = "orange") + 
   geom_ribbon( aes(ymax=pred_remain_RFS_secondary),
                ymin=0,
                linetype=1,
                size=1.2, 
                col = NA,
-               alpha=0.05,
+               alpha=0.4,
                fill="orange") + 
+  
+  
+  # taxonomic diversity
+  geom_ribbon( aes(ymax=pred_remain_SR_all),
+               ymin=0,
+               linetype=1,
+               size=1.2, 
+               col = NA,
+               alpha=0.3,
+               fill="black") + 
+  geom_point( aes(y=remain_all),linetype=1,size=3,col="black",fill="black",shape=22,alpha=1) + 
+  geom_line( aes(y=pred_remain_SR_all),linetype=1,size=1.2, col= "black") + 
+  
+  #geom_line( aes(y=remain_fish_associated*100),linetype=1,size=1.2,col="orange") +
+  geom_point( aes(y=remain_SR_secondary),linetype=1,size=3,col="black",shape=19,alpha=1) +
+  geom_line( aes(y=pred_remain_SR_secondary),linetype=2,size=1.2,col="black") +
+  geom_ribbon( aes(ymax=pred_remain_SR_secondary),
+               ymin=0,
+               linetype=1,
+               size=1.2, 
+               col = NA,
+               alpha=0.4,
+               fill="black") + 
+  
+  
   
   scale_y_continuous(
     
@@ -461,32 +473,80 @@ ggplot(analysis_dataset[order(analysis_dataset$remain_coral,decreasing=F),],
   ) + 
   xlab ("Proportion of corals eliminated") + 
   theme_bw() + 
-  ggtitle ("Direct (squares,solid lines) and indirect (circles,dashed lines) loss\nof taxonomic (black) and functional diversity (orange)")+
+  ggtitle ("Direct (squares,solid lines) and indirect (circles,dashed lines) loss\nof reef taxonomic (black) and functional diversity (orange)")+
   theme (axis.title=element_text(size=14))
+
 
 dev.off()
 
 
 # --------------------------------------------------------------------------------------
-# trait space illustrations
-# space of indirect extinctions
-all_to_remove <- lapply  (RFS_corals_secondary_extinctions, function (i) 
-  i$all_to_remove)
 
-c_direct_indirect <-cbind(all_pool, ext1=ifelse(all_pool$sp %in% 
-                                             unique(unlist(all_to_remove)),T,F))
-c_direct_indirect <-c_direct_indirect[which(c_direct_indirect$ext1==T),]
+# trait space representation
+
+# create the complete trait space (all 113 species in the dataset)
+# distance matrix (gower)
+gower_matrix_complete <- daisy (apply (sel_traits[,-which(colnames(sel_traits) == "scientificName")],2,scale), 
+                       metric=("gower"),
+                       type = list (ordratio = "Size_group"))
+
+# principal coordinate analysis
+# Building the functional space based on a PCOA 
+pco_complete<-dudi.pco(quasieuclid(gower_matrix_complete), 
+                       scannf=F, 
+                       nf=10) # quasieuclid() transformation to make the gower matrix as euclidean. nf= number of axis 
+
+#barplot(pco$eig) # barplot of eigenvalues for each axis 
+(Inertia2<-(pco_complete$eig[1]+pco_complete$eig[2]+pco_complete$eig[3]) /(sum(pco_complete$eig))) # percentage of inertia explained by the two first axes
+
+# estimate quality of f space
+#quality<-quality_funct_space_fromdist( gower_matrix,  nbdim=10,   
+#                                       plot="quality_funct_space_I") # it will produce a plot (hosted in the root folder)
+## only the frst axis
+(Inertia.first <- (pco_complete$eig[1]) /(sum(pco_complete$eig)))
+## only the frst axis
+(Inertia.scnd <- (pco_complete$eig[2]) /(sum(pco_complete$eig)))
+## only the frst axis
+(Inertia.trd <- (pco_complete$eig[3]) /(sum(pco_complete$eig)))
+Inertia.first+Inertia.scnd
+
+## complete space
+all_complete <- cbind (pco_complete$li[,1:2],
+                   ext = F,
+                   sp = sel_traits$scientificName)
+
+# convex hull
+a_complete <- all_complete [chull(all_complete[,1:2], y = NULL),] # its convex hull
+
+# coral associated space
+c_assoc <-cbind(all_complete, ext1=ifelse(all_complete$sp %in% 
+                                            rownames(m_web_occ),T,F))
+c_assoc <-c_assoc[which(c_assoc$ext1==T),] # the vector (choose species in the sets of coral associated)
+c_assoc_set <- c_assoc [chull(c_assoc, y = NULL),] # the convex hull vertices
+
+# coccurring fish
+c_direct_indirect <-cbind(all_complete, ext1=ifelse(all_complete$sp %in% 
+                                            unlist(dimnames(m_web_occ)),T,F))
+c_direct_indirect <-c_direct_indirect[which(c_direct_indirect$ext1==T),]# the vector (choose species in the sets of coccurrent spp)
 c_direct_indirect_set <- c_direct_indirect [chull(c_direct_indirect, y = NULL),]
+
+
+# representation of each trait space
+# coral associated space / complete space
+Polygon(c_assoc_set[,1:2], hole=F)@area / Polygon(a_complete[,1:2], hole=F)@area 
+# coocurring / complete
+Polygon(c_direct_indirect_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area 
+
 
 
 # ----------------------- complete space
 # kernel densities
 require(ks)
 # optimal bandwidth estimation
-hpi_mi_d1 <- Hpi(x = all_pool[,c("A1","A2")])
+hpi_mi_d1 <- Hpi(x = all_complete[,c("A1","A2")])
 
 # kernel density estimation
-est_mi_d1 <- kde(x = all_pool[,c("A1","A2")], 
+est_mi_d1 <- kde(x = all_complete[,c("A1","A2")], 
                  H = hpi_mi_d1, 
                  compute.cont = TRUE)  
 
@@ -514,7 +574,7 @@ PCoA_plot_mi_d1 <- ggplot(dcc_mi_d1, aes(x = Var1, y = Var2)) +
   scale_fill_gradientn(colours = rev(col_pal), 
                        limits = c(0,20)) +
   # points for species
-  geom_point(data = all_pool, 
+  geom_point(data = all_complete, 
              aes(x = A1,y=A2), size = 0.3, alpha = 0.5, colour = "grey20") +
   # probability kernels
   geom_contour(aes(z = value), breaks = cl_50_mi_d1, colour = "grey30", size = 1) +
@@ -526,24 +586,31 @@ PCoA_plot_mi_d1 <- ggplot(dcc_mi_d1, aes(x = Var1, y = Var2)) +
   xlim (c(-0.6,0.6))+
   ylim (c(-0.6,0.6))
 
-# plot density
-PCoA_plot_mi_d1 <- PCoA_plot_mi_d1 +geom_polygon(data=a_pool, aes (A1,A2),
+# plot convex hull
+
+PCoA_plot_mi_d1 <- PCoA_plot_mi_d1 + geom_polygon(data=a_complete, aes (A1,A2),
                               alpha=0.05,
                               fill="black",
                               colour = "gray92",
                               size=1,
                               linetype = 1) + # complete space
-  geom_text_repel(data = a_pool, aes (x=A1, y=A2, label=firstup(sp)),
-                  size=3)
+  geom_text_repel(data = a_complete, aes (x=A1, y=A2, label=firstup(sp)),
+                  size=3,col="black") + 
+  theme(legend.position = "top")
+
+
+# marginal plots 
+PCoA_plot_mi_d1 <- ggMarginal(PCoA_plot_mi_d1, type="densigram",fill = "red",alpha=0.8)
+
 
 
 # ---------------- coral associated
 # optimal bandwidth estimation for coral associated fish
-hpi_mi_d_CA <- Hpi(x = all_pool[-which(all_pool$sp %in% rownames(m_web_occ)),
+hpi_mi_d_CA <- Hpi(x = all_complete[-which(all_complete$sp %in% rownames(m_web_occ)),
                            c("A1","A2")])
 
 # kernel density estimation
-est_mi_CA <- kde(x = all_pool[-which(all_pool$sp %in% rownames(m_web_occ)),
+est_mi_CA <- kde(x = all_complete[-which(all_complete$sp %in% rownames(m_web_occ)),
                          c("A1","A2")], 
                  H = hpi_mi_d_CA, 
                  compute.cont = TRUE)  
@@ -572,7 +639,7 @@ PCoA_plot_mi_d2 <- ggplot(dcc_mi_CA, aes(x = Var1, y = Var2)) +
                        limits = c(0,20)) +
   
   # points for species
-  geom_point(data = all_pool[-which(all_pool$sp %in% rownames(m_web_occ)),], 
+  geom_point(data = all_complete[-which(all_complete$sp %in% rownames(m_web_occ)),], 
              aes(x = A1,y=A2), size = 0.3, alpha = 0.5, colour = "grey20") +
   
   # probability kernels
@@ -594,15 +661,22 @@ PCoA_plot_mi_d2 <- PCoA_plot_mi_d2 +
                size=1,
                linetype = 1)+
   geom_text_repel(data = c_assoc_set, aes (x=A1, y=A2, label=firstup(sp)),
-                  size=3)
+                  size=3)+
+  theme(legend.position = "top")
   
+# plot density
+PCoA_plot_mi_d2 <- ggMarginal(PCoA_plot_mi_d2, type="densigram",fill = "red",alpha=0.8)
+
+
 # ---------------------- elimination of all 
+
 # optimal bandwidth estimation for coral associated fish
-hpi_mi_d_all <- Hpi(x = all_pool[-which(all_pool$sp %in% unlist(dimnames(m_web_occ))),
+
+hpi_mi_d_all <- Hpi(x = all_complete[-which(all_complete$sp %in% unlist(dimnames(m_web_occ))),
                            c("A1","A2")])
 
 # kernel density estimation
-est_mi_all <- kde(x = all_pool[-which(all_pool$sp %in% unlist(dimnames(m_web_occ))),
+est_mi_all <- kde(x = all_complete[-which(all_complete$sp %in% unlist(dimnames(m_web_occ))),
                           c("A1","A2")], 
                  H = hpi_mi_d_all, 
                  compute.cont = TRUE)  
@@ -631,7 +705,7 @@ PCoA_plot_mi_d3 <- ggplot(dcc_mi_all, aes(x = Var1, y = Var2)) +
                        limits = c(0,20)) +
   
   # points for species
-  geom_point(data = all_pool[-which(all_pool$sp %in% unlist(dimnames(m_web_occ))),], 
+  geom_point(data = all_complete[-which(all_complete$sp %in% unlist(dimnames(m_web_occ))),], 
              aes(x = A1,y=A2), size = 0.3, alpha = 0.5, colour = "grey20") +
   
   # probability kernels
@@ -653,8 +727,11 @@ PCoA_plot_mi_d3 <- PCoA_plot_mi_d3 +
                size=1,
                linetype = 1)+
   geom_text_repel(data = c_direct_indirect_set, aes (x=A1, y=A2, label=firstup(sp)),
-                  size=3)
+                  size=3)+ 
+  theme(legend.position = "top")
 
+# plot density
+PCoA_plot_mi_d3 <- ggMarginal(PCoA_plot_mi_d3, type="densigram",fill = "red",alpha=0.8)
 
 
 # ----------------- plot of the difference
@@ -681,7 +758,7 @@ PCoA_plot_mi_diff <- ggplot(dcc_mi_d1_test2, aes(x = Var1, y = Var2)) +
   ) +
   
   # points for species
-  geom_point(data = all, 
+  geom_point(data = all_complete[-which(all_complete$sp %in% rownames(m_web_occ)),], 
              aes(x = A1,y=A2),
              size = 0.3, alpha = 0.5, colour = "grey20") +
   coord_equal() +
@@ -694,85 +771,12 @@ PCoA_plot_mi_diff <- ggplot(dcc_mi_d1_test2, aes(x = Var1, y = Var2)) +
         legend.position = "top"
   ) +
   xlim (c(-0.6,0.6))+
-  ylim (c(-0.6,0.6))
-PCoA_plot_mi_diff
+  ylim (c(-0.6,0.6))+
+  theme(legend.position = "top")
 
-## correlations to project trait values into the ordination
-correlations <- cor (data.frame(sel_traits[,-which(colnames(sel_traits) == "scientificName")],
-                                pco$li[,1:3]),
-                     use = "complete.obs")
-correlations<-correlations [,c("A1","A2")]# interesting correlations
-
-# clean plot  to receive correlations
-clean_plot <- ggplot ()+ geom_point(data = all, 
-                    aes(x = A1,y=A2),
-                    size = 0.3, alpha = 0.5, colour = "grey20") +
-  coord_equal() +
-  theme_classic() +
-  # edit plot
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text = element_text(colour = "black",size =5),
-        axis.title = element_text(colour = "black",size =7),
-        legend.position = "top"
-  )+
-  xlim (c(-0.6,0.6))+
-  ylim (c(-0.6,0.6))
-
-clean_plot <- clean_plot + geom_segment(aes(x = 0, y = 0, 
-                 xend = correlations[1,1]*0.2, 
-                 yend = correlations[1,2]*0.2),size = 1,
-             color="black",
-             arrow = arrow(length = unit(.35, "cm")))  + 
-  ## annotate
-  annotate(geom="text",x=correlations[1,1]*0.25,
-           y=correlations[1,2]*0.24,label="Aspect ratio",
-           color="black") +
-  
-  geom_segment(aes(x = 0, y = 0, 
-                   xend = correlations[2,1]*0.2, 
-                   yend = correlations[2,2]*0.2),size = 1,
-               color="black",
-               arrow = arrow(length = unit(.35, "cm"))) + 
-  annotate(geom="text",x=correlations[2,1]*0.25,
-           y=correlations[2,2]*0.25,label="Trophic level",
-           color="black") +
-  
-  geom_segment(aes(x = 0, y = 0, 
-                   xend = correlations[3,1]*0.2, 
-                   yend = correlations[3,2]*0.2),size = 1,
-               color="black",
-               arrow = arrow(length = unit(.35, "cm"))) + 
-  annotate(geom="text",x=correlations[3,1]*0.20,
-           y=correlations[3,2]*0.25,label="Group size",
-           color="black") +
-  
-  geom_segment(aes(x = 0, y = 0, 
-                   xend = correlations[4,1]*0.2, 
-                   yend = correlations[4,2]*0.2),size = 1,
-               color="black",
-               arrow = arrow(length = unit(.35, "cm"))) + 
-  annotate(geom="text",x=correlations[4,1]*0.25,
-           y=correlations[4,2]*0.29,label="TºC max",
-           color="black") + 
-  
-  geom_segment(aes(x = 0, y = 0, 
-                   xend = correlations[5,1]*0.2, 
-                   yend = correlations[5,2]*0.2),size = 1,
-               color="black",
-               arrow = arrow(length = unit(.35, "cm"))) + 
-  annotate(geom="text",x=correlations[5,1]*0.25,
-           y=correlations[5,2]*0.23,label="Depth max",
-           color="black") + 
-  
-  geom_segment(aes(x = 0, y = 0, 
-                   xend = correlations[6,1]*0.2, 
-                   yend = correlations[6,2]*0.2),size = 1,
-               color="black",
-               arrow = arrow(length = unit(.35, "cm"))) + 
-  annotate(geom="text",x=correlations[6,1]*0.18,
-           y=correlations[6,2]*0.25,label="Body size",
-           color="black") 
+# plot density
+PCoA_plot_mi_diff <- ggMarginal(PCoA_plot_mi_diff, 
+                                type="densigram",fill = "red",alpha=0.8)
 
 
 # -------------------- difference complete vs removal of all 
@@ -799,7 +803,7 @@ PCoA_plot_mi_diff_2 <- ggplot(dcc_mi_d1_test2, aes(x = Var1, y = Var2)) +
   ) +
   
   # points for species
-  geom_point(data = all, 
+  geom_point(data = all_complete[-which(all_complete$sp %in% unlist(dimnames(m_web_occ))),], 
              aes(x = A1,y=A2),
              size = 0.3, alpha = 0.5, colour = "grey20") +
   coord_equal() +
@@ -814,17 +818,123 @@ PCoA_plot_mi_diff_2 <- ggplot(dcc_mi_d1_test2, aes(x = Var1, y = Var2)) +
   xlim (c(-0.6,0.6))+
   ylim (c(-0.6,0.6))
 
-pdf (here ("output", "trait_space.pdf "),width=10,height=8)
-grid.arrange(PCoA_plot_mi_d1+theme(legend.position = "top"),
-             PCoA_plot_mi_d2+theme(legend.position = "top"),
-             PCoA_plot_mi_d3+theme(legend.position = "top"),
+# plot density
+PCoA_plot_mi_diff_2 <- ggMarginal(PCoA_plot_mi_diff_2, 
+                                type="densigram",fill = "red",alpha=0.8)
+
+
+
+
+
+## correlations to project trait values into the ordination
+correlations <- cor (data.frame(sel_traits[,-which(colnames(sel_traits) == "scientificName")],
+                                pco_complete$li[,1:3]),
+                     use = "complete.obs")
+correlations<-correlations [,c("A1","A2")]# interesting correlations
+
+# clean plot  to receive correlations
+clean_plot <- ggplot ()+ geom_point(data = all_complete, 
+                                    aes(x = A1,y=A2),
+                                    size = 0.3, alpha = 0.5, colour = "grey20") +
+  coord_equal() +
+  theme_classic() +
+  # edit plot
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text = element_text(colour = "black",size =5),
+        axis.title = element_text(colour = "black",size =7),
+        legend.position = "top"
+  )+
+  xlim (c(-0.6,0.6))+
+  ylim (c(-0.6,0.6))
+
+clean_plot <- clean_plot + 
+  
+  
+  # size
+  geom_segment(aes(x = 0, y = 0, 
+                    xend = correlations[1,1]*0.5, 
+                    yend = correlations[1,2]*0.5),size = 1,
+                    color="black",
+                    arrow = arrow(length = unit(.35, "cm")))  + 
+ 
+  
+   ## annotate
+  annotate(geom="text",x=correlations[1,1]*0.5,
+           y=correlations[1,2]*0.5,label="Body size",
+           color="black") +
+  
+  # aspect ratio
+  geom_segment(aes(x = 0, y = 0, 
+                   xend = correlations[2,1]*0.5, 
+                   yend = correlations[2,2]*0.5),size = 1,
+               color="black",
+               arrow = arrow(length = unit(.35, "cm")))  + 
+  
+  
+  ## annotate
+  annotate(geom="text",x=correlations[2,1]*0.5,
+           y=correlations[2,2]*0.5,label="Aspect ratio",
+           color="black") +
+  
+  # trophic level
+  geom_segment(aes(x = 0, y = 0, 
+                   xend = correlations[3,1]*0.5, 
+                   yend = correlations[3,2]*0.5),size = 1,
+               color="black",
+               arrow = arrow(length = unit(.35, "cm"))) + 
+  
+  annotate(geom="text",x=correlations[3,1]*0.5,
+           y=correlations[3,2]*0.5,
+           label="Trophic level",
+           color="black") +
+  
+    # group size
+  geom_segment(aes(x = 0, y = 0, 
+                   xend = correlations[4,1]*0.5, 
+                   yend = correlations[4,2]*0.5),size = 1,
+               color="black",
+               arrow = arrow(length = unit(.35, "cm"))) + 
+  annotate(geom="text",x=correlations[4,1]*0.5,
+           y=correlations[4,2]*0.5,label="Group size",
+           color="black") +
+  
+    # temperature
+  geom_segment(aes(x = 0, y = 0, 
+                   xend = correlations[5,1]*0.5, 
+                   yend = correlations[5,2]*0.5),size = 1,
+               color="black",
+               arrow = arrow(length = unit(.35, "cm"))) + 
+  annotate(geom="text",x=correlations[5,1]*0.50,
+           y=correlations[5,2]*0.50,label="TºC max",
+           color="black") + 
+  
+    # depth
+  geom_segment(aes(x = 0, y = 0, 
+                   xend = correlations[6,1]*0.5, 
+                   yend = correlations[6,2]*0.5),size = 1,
+               color="black",
+               arrow = arrow(length = unit(.35, "cm"))) + 
+  annotate(geom="text",x=correlations[6,1]*0.5,
+           y=correlations[6,2]*0.5,label="Depth max",
+           color="black")  
+  
+  
+
+
+# sasve
+
+
+pdf (here ("output", "trait_space.pdf"),width=10,height=8,onefile = T)
+
+grid.arrange(PCoA_plot_mi_d1,
+             PCoA_plot_mi_d2,
+             PCoA_plot_mi_d3,
              PCoA_plot_mi_diff,
              PCoA_plot_mi_diff_2,
-            clean_plot, nrow=2,ncol=3)
+             clean_plot,
+              nrow=2,ncol=3)
 
 dev.off()
 
-# trait space occupancy
-dcc_mi_d1$value
-round (sum(dcc_mi_all$value>0)/sum(dcc_mi_d1$value>0),2)
-round(sum(dcc_mi_CA$value>0)/sum(dcc_mi_d1$value>0),2)
+
