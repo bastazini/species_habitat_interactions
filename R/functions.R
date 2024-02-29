@@ -23,7 +23,8 @@ organize_traits <- function (dataset) {
                        Trophic_level = mean(Trophic_level,na.rm=T),
                        Size_group = unique(Size_group),
                        TempPref_max = mean(TempPref_max,na.rm=T),
-                       Depth_max = mean(Depth_max,na.rm=T)) %>% # count the number of rows that a given answered appeared
+                       Depth_max = mean(Depth_max,na.rm=T)
+            ) %>% # count the number of rows that a given answered appeared
             
             mutate (log_actual_size = log(actual_size),
                     log_Body_size = log(Body_size),
@@ -67,8 +68,8 @@ organize_traits <- function (dataset) {
           # and the family
           trait_dataset[which(trait_dataset$scientificName == "Chaetodon ocellatus"),"family"] <- "Chaetodontidae"
           
-          
-          trait_dataset[which(trait_dataset$scientificName == "Chaetodon ocellatus"),]
+          # check
+          # trait_dataset[which(trait_dataset$scientificName == "Chaetodon ocellatus"),]
           
           # analyzed fish
           # number of analyzed species
@@ -93,6 +94,15 @@ organize_traits <- function (dataset) {
           )
 
           
+          # bind vulnerabilty
+          toBind <- traits [match (trait_dataset$scientificName,
+                         traits$Name),]
+          # table(trait_dataset$scientificName == toBind$Name)
+          # bind
+          trait_dataset <- cbind (trait_dataset,
+                                  toBind[,c("IUCN_status", "Price_category")])
+          
+          # return
           return(trait_dataset)
 }
 
