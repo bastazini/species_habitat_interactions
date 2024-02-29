@@ -7,6 +7,10 @@
 
 # --------------------------------------------------------------------------------------
 
+# load basic data & functions
+require(here)
+source(here ("R", "functions.R"))
+source(here ("R", "packages.R"))
 load(here ("processed_data", "basic_data.RData"))
 
 # create the complete trait space (all 113 species in the dataset)
@@ -67,6 +71,18 @@ out_not_c_assoc <-cbind(all_complete, ext1=ifelse(all_complete$sp %in%
 out_not_c_assoc <-out_not_c_assoc[which(out_not_c_assoc$ext1==F),] # the vector (choose species in the sets of coral associated)
 out_not_c_assoc_set <- out_not_c_assoc [chull(out_not_c_assoc, y = NULL),] # the convex hull vertices
 
+# threatened
+threatened_spp <- trait_dataset %>%
+  
+  filter (IUCN_status %in% c("vu","en") &
+            Price_category %in% c("high", "very high"))
+  
+threatened <-cbind(all_complete, ext1=ifelse(all_complete$sp %in% 
+                                               threatened_spp$scientificName == T,T,F))
+threatened <-threatened[which(threatened$ext1==T),] # the vector (choose species in the sets of coral associated)
+threatened_set <- threatened [chull(threatened, y = NULL),] # the convex hull vertices
+
+
 # representation of each trait space
 # coral associated space / complete space
 Polygon(c_assoc_set[,1:2], hole=F)@area / Polygon(a_complete[,1:2], hole=F)@area 
@@ -78,6 +94,8 @@ Polygon(not_c_assoc_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)
 # out of not associated / complete
 Polygon(out_not_c_assoc_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area 
 
+# threatened / complete
+Polygon(threatened_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area 
 
 
 # ----------------------- complete space
@@ -374,7 +392,7 @@ correlations <- cor (data.frame(sel_traits[,-which(colnames(sel_traits) == "scie
 correlations<-correlations [,c("A1","A2")]# interesting correlations
 
 # clean plot  to receive correlations
-clean_plot <- ggplot () +  +
+clean_plot <- ggplot () +  
   coord_equal() +
   # edit plot
   theme(panel.grid.major = element_blank(),
@@ -420,7 +438,12 @@ clean_plot <- ggplot() +
                colour = "gray92",
                size=0,
                linetype = 1)+
-  
+  geom_polygon(data=threatened_set, aes (A1,A2),
+               alpha=0.5,
+               fill="blue",
+               colour = "gray92",
+               size=0,
+               linetype = 1)+
   
   ## annotate
   annotate(geom="text",
@@ -464,6 +487,14 @@ clean_plot <- ggplot() +
            label=paste (
              
              100-round (Polygon(not_c_assoc_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area ,2)*100,
+             "%", sep=""
+           )) + 
+  annotate(geom="text",
+           x=0,
+           y=0.2,
+           label=paste (
+             
+             round (Polygon(threatened_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area ,2)*100,
              "%", sep=""
            ))
 
@@ -574,3 +605,80 @@ trait_spaces
 
 dev.off()
 
+
+
+# trophic level of each bipartite
+
+p2_TL <- rbind (
+  data.frame ("Partite"="Partite B",
+              "val"=sel_traits[which(sel_traits$scientificName %in% rownames(m_web_occ )),"Trophic_level"]),
+  data.frame ("Partite"="Partite C",
+              "val"=sel_traits[which(sel_traits$scientificName %in% colnames(m_web_occ )),"Trophic_level"])
+) %>%
+  ggplot (aes (x=Partite, y = Trophic_level,fill=Partite))+
+  
+  geom_boxplot()+
+  
+  scale_fill_viridis_d(begin=.5)+
+
+  theme_bw() +
+  
+  ylab ("Trophic level") + 
+  
+  xlab ("Network component") +
+  
+  theme(legend.position = "none")
+  
+  
+# body size
+p2_size <- rbind (
+  data.frame ("Partite"="Partite B",
+              "val"=sel_traits[which(sel_traits$scientificName %in% rownames(m_web_occ )),"log_actual_size"]),
+  data.frame ("Partite"="Partite C",
+              "val"=sel_traits[which(sel_traits$scientificName %in% colnames(m_web_occ )),"log_actual_size"])
+) %>%
+  ggplot (aes (x=Partite, y = log_actual_size,fill=Partite))+
+  
+  geom_boxplot()+
+  
+  scale_fill_viridis_d(begin=.5)+
+  
+  theme_bw() +
+  
+  ylab ("Body size (log cm)") + 
+  
+  xlab ("Network component") +
+  
+  theme(legend.position = "none")
+
+png (here ("output", "anova1.png"),width=12,height=8,units = "cm",res=300)
+grid.arrange(
+  p2_TL,
+  p2_size,nrow=1
+)
+
+dev.off()
+
+# test
+dat1 <- rbind (
+  data.frame ("Partite"="Partite B",
+              "val"=sel_traits[which(sel_traits$scientificName %in% rownames(m_web_occ )),"log_actual_size"]),
+  data.frame ("Partite"="Partite C",
+              "val"=sel_traits[which(sel_traits$scientificName %in% colnames(m_web_occ )),"log_actual_size"])
+)  
+
+summary (lm (log_actual_size ~ Partite,data= dat1))
+
+# TL
+dat1 <- rbind (
+  data.frame ("Partite"="Partite B",
+              "val"=sel_traits[which(sel_traits$scientificName %in% rownames(m_web_occ )),"Trophic_level"]),
+  data.frame ("Partite"="Partite C",
+              "val"=sel_traits[which(sel_traits$scientificName %in% colnames(m_web_occ )),"Trophic_level"])
+)  
+
+summary (aov (Trophic_level ~ Partite,data= dat1))
+summary (lm (Trophic_level ~ Partite,data= dat1))
+
+# end of the analysis
+rm(list=ls())
