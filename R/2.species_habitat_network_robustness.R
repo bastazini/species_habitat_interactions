@@ -40,7 +40,6 @@ rownames(m_web)<- labels_web
 m_web<-sortweb(m_web,sort.order="dec")
 
 
-
 # ===============================================
 # functional trait space loss
 # organize trait data
@@ -119,6 +118,7 @@ require(dplyr)
 df_occ <- df_occ %>%
   group_by(comb) %>%
   summarize ( cor = mean(value))
+
 # adjust spp names
 network_data_occ <- cbind (df_occ, 
                            sp1=do.call(rbind, strsplit (df_occ$comb, "_"))[,1],
