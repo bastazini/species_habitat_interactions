@@ -66,10 +66,10 @@ not_c_assoc <-not_c_assoc[which(not_c_assoc$ext1==T),] # the vector (choose spec
 not_c_assoc_set <- not_c_assoc [chull(not_c_assoc, y = NULL),] # the convex hull vertices
 
 # out not associated
-out_not_c_assoc <-cbind(all_complete, ext1=ifelse(all_complete$sp %in% 
-                                                unlist(dimnames(m_web_occ)) ==F,T,F))
-out_not_c_assoc <-out_not_c_assoc[which(out_not_c_assoc$ext1==F),] # the vector (choose species in the sets of coral associated)
-out_not_c_assoc_set <- out_not_c_assoc [chull(out_not_c_assoc, y = NULL),] # the convex hull vertices
+out_not_c_assoc <-gDifference (
+  SpatialPolygons(list(Polygons(list(Polygon(c_direct_indirect_set[,1:2], hole=F)),ID="B"))),
+  SpatialPolygons(list(Polygons(list(Polygon(not_c_assoc_set[,1:2], hole=F)),ID="A")))
+)
 
 # threatened
 threatened_spp <- trait_dataset %>%
@@ -92,10 +92,11 @@ Polygon(c_direct_indirect_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], h
 Polygon(not_c_assoc_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area 
 
 # out of not associated / complete
-Polygon(out_not_c_assoc_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area 
+gArea(out_not_c_assoc)  / Polygon(a_complete[,1:2], hole=F)@area 
 
 # threatened / complete
 Polygon(threatened_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area 
+
 
 
 # ----------------------- complete space
@@ -409,7 +410,7 @@ clean_plot <- ggplot () +
 # plot density
 clean_plot <- ggplot() +
   geom_polygon(data=a_complete, aes (A1,A2),
-               alpha=0.5,
+               alpha=0.4,
                fill="black",
                colour = "black",
                size=1,
@@ -422,33 +423,21 @@ clean_plot <- ggplot() +
                linetype = 1)+
   geom_polygon(data=c_direct_indirect_set, aes (A1,A2),
                alpha=0.5,
-               fill="green",
-               colour = "gray92",
+               fill="green4",
+               colour = "green4",
                size=0,
                linetype = 1)+
   geom_polygon(data=c_assoc_set, aes (A1,A2),
-               alpha=0.5,
-               fill="red",
-               colour = "gray92",
-               size=0,
-               linetype = 1) +
-  geom_polygon(data=out_not_c_assoc_set, aes (A1,A2),
-               alpha=0.5,
-               fill="pink",
-               colour = "gray92",
+               alpha=0.6,
+               fill="red3",
+               colour = "red3",
                size=0,
                linetype = 1)+
-  geom_polygon(data=threatened_set, aes (A1,A2),
-               alpha=0.5,
-               fill="blue",
-               colour = "gray92",
-               size=0,
-               linetype = 1)+
-  
   ## annotate
   annotate(geom="text",
            x=-0.15,
            y=0.25,
+           size=7,
            label=paste (
              
              round (Polygon(not_c_assoc_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area,2)*100,
@@ -459,6 +448,7 @@ clean_plot <- ggplot() +
   annotate(geom="text",
            x=0.13,
            y=0.17,
+           size=7,
            label=paste (
              
              round (Polygon(c_direct_indirect_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area,2)*100,
@@ -469,141 +459,205 @@ clean_plot <- ggplot() +
   annotate(geom="text",
            x=0.0,
            y=0.0,
+           size=7,
            label=paste (
              
              round (Polygon(c_assoc_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area,2)*100,
              "%", sep=""
            ),
            
-           color="black")  +
-  geom_segment(aes(x = 0.2, y = 0.22, 
-                   xend = 0.25, 
-                   yend = 0.27),size = 1,
-               color="black",
-               arrow = arrow(length = unit(.35, "cm"))) + 
-  annotate(geom="text",
-           x=0.25,
-           y=0.3,
-           label=paste (
-             
-             100-round (Polygon(not_c_assoc_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area ,2)*100,
-             "%", sep=""
-           )) + 
-  annotate(geom="text",
-           x=0,
-           y=0.2,
-           label=paste (
-             
-             round (Polygon(threatened_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area ,2)*100,
-             "%", sep=""
-           ))
+           color="black") 
+
+  
 
 # add points
 clean_plot <- clean_plot + geom_point(data = all_complete, 
            aes(x = A1,y=A2),
-           size = 2, alpha = 0.5, colour = "grey20")
+           size = 2, alpha = 0.5, colour = "grey20")+
+  theme_classic() 
 
 
-clean_plot <- clean_plot + 
+# add marginal plots
+clean_plot <- ggMarginal(clean_plot, 
+                         type="densigram",fill = "red3",alpha=0.8)
+
+
+
+# threatened portion
+threatened_portion <- ggplot() + geom_point(data = all_complete, 
+                                            aes(x = A1,y=A2),
+                                            size = 2, alpha = 0.5, colour = "grey20")+
+  geom_polygon(data=a_complete, aes (A1,A2),
+               alpha=0.4,
+               fill="black",
+               colour = "black",
+               size=1,
+               linetype = 2)+
+  geom_polygon(data=data.frame (out_not_c_assoc@polygons[[1]]@Polygons[[1]]@coords), aes (x,y),
+               alpha=0.8,
+               fill="pink4",
+               colour = "pink4",
+               size=0,
+               linetype = 1)+
+  
+  geom_polygon(data=data.frame (out_not_c_assoc@polygons[[1]]@Polygons[[2]]@coords), aes (x,y),
+               alpha=0.8,
+               fill="pink4",
+               colour = "pink4",
+               size=0,
+               linetype = 1)+
+  geom_polygon(data=threatened_set, aes (A1,A2),
+               alpha=0.8,
+               fill="orange4",
+               colour = "orange4",
+               size=0,
+               linetype = 1) + 
+  geom_text_repel(data = threatened_set, aes (x=A1, y=A2, label=firstup(sp)),
+                  size=3)+
+  geom_text_repel(data = threatened_set, aes (x=A1, y=A2, label=firstup(sp)),
+                  size=3)+
+  geom_text_repel(data = a_complete, aes (x=A1, y=A2, label=firstup(sp)),
+                  size=3)+
+  
+  annotate(geom="text",
+           x=0,
+           y=0.2,
+           size=7,
+           label=paste (
+             
+             round (Polygon(threatened_set[,1:2], hole=F)@area  / Polygon(a_complete[,1:2], hole=F)@area ,2)*100,
+             "%", sep=""
+           ))  +
+  geom_segment(aes(x = 0.2, y = 0.15, 
+                   xend = 0.25, 
+                   yend = 0.22),size = 1,
+               color="black",
+               arrow = arrow(length = unit(.35, "cm"))) + 
+  annotate(geom="text",
+           x=0.25,
+           y=0.25,
+           size=7,
+           label=paste (
+             
+             round(gArea(out_not_c_assoc)  / Polygon(a_complete[,1:2], hole=F)@area *100),
+             "%", sep=""
+           )) 
+
+
+
+# add segments
+threatened_portion <- threatened_portion + 
   
   
   # size
   geom_segment(aes(x = 0, y = 0, 
                    xend = correlations[1,1]*0.5, 
                    yend = correlations[1,2]*0.5),size = 1,
-               color="black",
+               color="gray30",
+               alpha=0.7,
                arrow = arrow(length = unit(.35, "cm")))  + 
   
   
   ## annotate
   annotate(geom="text",x=correlations[1,1]*0.5,
            y=correlations[1,2]*0.5,label="Body size",
-           color="black") +
+           color="gray30",
+           alpha=0.7
+  ) +
   
   # aspect ratio
   geom_segment(aes(x = 0, y = 0, 
                    xend = correlations[2,1]*0.5, 
                    yend = correlations[2,2]*0.5),size = 1,
-               color="black",
+               color="gray30",
+               alpha=0.7,
                arrow = arrow(length = unit(.35, "cm")))  + 
   
   
   ## annotate
   annotate(geom="text",x=correlations[2,1]*0.5,
            y=correlations[2,2]*0.5,label="Aspect ratio",
-           color="black") +
+           color="gray30",
+           alpha=0.7) +
   
   # trophic level
   geom_segment(aes(x = 0, y = 0, 
                    xend = correlations[3,1]*0.5, 
                    yend = correlations[3,2]*0.5),size = 1,
-               color="black",
+               color="gray30",
+               alpha=0.7,
                arrow = arrow(length = unit(.35, "cm"))) + 
   
   annotate(geom="text",x=correlations[3,1]*0.5,
            y=correlations[3,2]*0.5,
            label="Trophic level",
-           color="black") +
+           color="gray30",
+           alpha=0.7) +
   
   # group size
   geom_segment(aes(x = 0, y = 0, 
                    xend = correlations[4,1]*0.3, 
                    yend = correlations[4,2]*0.3),size = 1,
-               color="black",
+               color="gray30",
+               alpha=0.7,
                arrow = arrow(length = unit(.35, "cm"))) + 
   annotate(geom="text",x=correlations[4,1]*0.3,
            y=correlations[4,2]*0.3,label="Group size",
-           color="black") +
+           color="gray30",
+           alpha=0.7) +
   
   # temperature
   geom_segment(aes(x = 0, y = 0, 
                    xend = correlations[5,1]*0.5, 
                    yend = correlations[5,2]*0.5),size = 1,
-               color="black",
+               color="gray30",
+               alpha=0.7,
                arrow = arrow(length = unit(.35, "cm"))) + 
   annotate(geom="text",x=correlations[5,1]*0.50,
            y=correlations[5,2]*0.50,label="TºC max",
-           color="black") + 
+           color="gray30",
+           alpha=0.7) + 
   
   # depth
   geom_segment(aes(x = 0, y = 0, 
                    xend = correlations[6,1]*0.5, 
                    yend = correlations[6,2]*0.5),size = 1,
-               color="black",
+               color="gray30",
+               alpha=0.7,
                arrow = arrow(length = unit(.35, "cm"))) + 
   annotate(geom="text",x=correlations[6,1]*0.5,
            y=correlations[6,2]*0.5,label="Depth max",
-           color="black")  +
+           color="gray30",
+           alpha=0.7)  +
   theme_classic() 
 
 
-clean_plot <- ggMarginal(clean_plot, 
-                        type="densigram",fill = "red",alpha=0.8)
 
-# sasve
+
+# save
 
 
 pdf (here ("output", "trait_space.pdf"),width=12,height=9,onefile = T)
 
-grid.arrange(PCoA_plot_mi_d1,
+grid.arrange(clean_plot,
+             threatened_portion,
+             PCoA_plot_mi_d1,
              PCoA_plot_mi_d2,
              PCoA_plot_mi_d3,
              PCoA_plot_mi_diff,
              PCoA_plot_mi_diff_2,
-             clean_plot,
-             nrow=2,ncol=3)
+             
+             nrow=2,ncol=4,
+             
+             layout_matrix = rbind (c(1,1,3,4,5),
+                                    c(2,2,NA,6,7)
+                                    )
+             
+             )
 
 dev.off()
 
 
-# save the trait space (convex hulls)
-
-pdf (here ("output", "trait_space_convex_hull.pdf"),
-     width=5,height=5,onefile = T)
-
-trait_spaces
-
-dev.off()
 
 
 
@@ -651,7 +705,7 @@ p2_size <- rbind (
   
   theme(legend.position = "none")
 
-png (here ("output", "anova1.png"),width=12,height=8,units = "cm",res=300)
+pdf (here ("output", "anova.pdf"),width=6,height=4)
 grid.arrange(
   p2_TL,
   p2_size,nrow=1
@@ -659,14 +713,14 @@ grid.arrange(
 
 dev.off()
 
-# test
+  # test
 dat1 <- rbind (
   data.frame ("Partite"="Partite B",
               "val"=sel_traits[which(sel_traits$scientificName %in% rownames(m_web_occ )),"log_actual_size"]),
   data.frame ("Partite"="Partite C",
               "val"=sel_traits[which(sel_traits$scientificName %in% colnames(m_web_occ )),"log_actual_size"])
 )  
-
+summary (aov (log_actual_size ~ Partite,data= dat1))
 summary (lm (log_actual_size ~ Partite,data= dat1))
 
 # TL
@@ -681,4 +735,4 @@ summary (aov (Trophic_level ~ Partite,data= dat1))
 summary (lm (Trophic_level ~ Partite,data= dat1))
 
 # end of the analysis
-rm(list=ls())
+#rm(list=ls())
