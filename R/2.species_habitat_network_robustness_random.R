@@ -13,9 +13,9 @@ rm(list=ls())
 require(here)
 source(here ("R", "functions.R"))
 source(here ("R", "packages.R"))
-load(file = here ("data","occupancy_data.RData"))
+load(file = here ("processed_data","occupancy_data.RData"))
 
-
+# set seed
 set.seed (1001)
 
 

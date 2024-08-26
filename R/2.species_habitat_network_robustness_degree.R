@@ -23,23 +23,14 @@ rm(list=ls())
 require(here)
 source(here ("R", "functions.R"))
 source(here ("R", "packages.R"))
-load(file = here ("data","occupancy_data.RData"))
-
-
+load(file = here ("processed_data","occupancy_data.RData"))
 
 # -----------------------------------------------
 
-
-# coun total N fish
+# count total N fish
 ns_fish <- length(unique(network_data$peixe))
 # total N corals
 ns_coral <- length(unique(network_data$coral))
-
-# histogram of predictions
-ggplot (network_data ,
-        aes (x=psi )) +
-  geom_histogram(binwidth=0.1,fill="yellow", colour="black")+
-  facet_wrap(~coral)
 
 # coral associated fish (following Luza et al. 2022, sci rep)
 network_data <- network_data[which(network_data$low.coral>0 & 
@@ -68,9 +59,7 @@ m_web<-sortweb(m_web,sort.order="dec")
 
 source ("R/functions.R")
 trait_dataset<- organize_traits (fish_size)
-
-
-unique(network_data$peixe) %in% unique(trait_dataset$scientificName)
+#unique(network_data$peixe) %in% unique(trait_dataset$scientificName)
 
 
 #---------------------------------------
@@ -195,7 +184,6 @@ plotweb2(data.matrix(m_web),
 )
 
 dev.off()
-
 
 
 # ----------------------------------
@@ -534,7 +522,6 @@ ggplot(analysis_dataset[order(analysis_dataset$remain_coral,decreasing=F),],
 dev.off()
 
 # create dir to receive files
-dir.create("processed_data")
 save.image(here ("processed_data", "basic_data.RData"))
 
 # clean work space
