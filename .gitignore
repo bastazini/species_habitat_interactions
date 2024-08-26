@@ -3,7 +3,9 @@
 .RData
 .Ruserdata
 *.pdf
-output
+output/*.svg
+output/*.pdf
+output/*.png
 docs/*.mp4
 docs
 R/2.species_habitat_interaction.R
