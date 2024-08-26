@@ -11,9 +11,9 @@ require(ggplot2)
 require(gridExtra)
 require(grid)
 require(ggrepel)
-require ("scatterpie")
+#require ("scatterpie")
 require(sf)
-require(rgeos)
+#require(rgeos)
 
 ## pacotes para carregar os dados
 require(xlsx)
@@ -27,18 +27,13 @@ require(jagsUI)
 
 ### 
 ## pacotes para vizinhanca
-require(rgdal)
 require(raster)
-require(rgeos)
 require (spdep) 
 require(maps)
 
 ## pacote para processamento paralelo
 require(parallel)
 
-# pacote para chamar o winbugs
-require(R2WinBUGS)
-require(jagsUI)
 
 # funcoes diversas (padronizacao)
 require(vegan)
@@ -49,3 +44,4 @@ require(clue)
 
 require(here); require(reshape); require(jagsUI); require(bipartite); require(igraph)
 require(ggplot2);require(dplyr); require(ggExtra)
+
