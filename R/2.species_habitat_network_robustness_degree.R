@@ -1,17 +1,16 @@
 # ---------------------------------------------# 
 
 
-#       
-#       SPECIES  - HABITAT INTERACTION NETWORKS
+
+
+# Project: Coping with Collapse: Functional Robustness of Coral-Reef Fish Network to Simulated Cascade Extinction
+
+
+# Script 2: organize data for network analysis and produce a map (supp info)
 # (Analyzes based on "occupancy_data.RData")
 
-
 #   REMOVAL OF CORALS IS BASED ON THEIR DEGREE - NUMBER OF CORAL-ASSOCIATED FISH
-
-
 #   IN DESCENDING ORDER (HIGH DEGREE IS REMOVED FIRST)
-
-
 #   The other scripts (also numbered with '2' bring scenarios of random- and vulnerability-based removal)
 
 
@@ -207,24 +206,20 @@ sel_traits_fish <- (sel_traits_fish %>%
              Depth_max = max(Depth_max))
 )
 
-
 # trait space comprising the 63 spp.
 # distance matrix (gower)
 gower_matrix <- daisy (apply (sel_traits_fish[,-which(colnames(sel_traits_fish) == "scientificName")],2,scale), 
                        metric=("gower"),
                        type = list (ordratio = "Size_group"))
 
-
 # principal coordinate analysis
 # Building the functional space based on a PCOA 
 pco<-dudi.pco(quasieuclid(gower_matrix), scannf=F, nf=10) # quasieuclid() transformation to make the gower matrix as euclidean. nf= number of axis 
-
 
 ##  space
 all_pool <- cbind (pco$li[,1:2],
               ext = F,
               sp = sel_traits_fish$scientificName)
-
 
 # convex hull
 a_pool <- all_pool [chull(all_pool[,1:2], y = NULL),] # its convex hull
@@ -232,10 +227,8 @@ a_pool <- all_pool [chull(all_pool[,1:2], y = NULL),] # its convex hull
 # use species with some relationships (n=63)
 fish_related <- total [which(total$peixe %in% sel_traits_fish$scientificName),]
 
-
 # --------------------------------------
 # removal based on coral degree
-
 
 # calculate functional trait space loss
 # based on RFS (Luza et al. 2022)
@@ -381,7 +374,8 @@ analysis_dataset<-cbind(analysis_dataset,
         )
 
 
-# run function of hyperbolic curve
+# run function of hyperbolic curve -------------------------------------------------
+
 hyper_curve_secondary <- fit.hyperbolica (analysis_dataset[,c("no", "ext.lower", "remain_all")],
                                 plot.it = T)
 hyper_curve_associated <- fit.hyperbolica (analysis_dataset[,c("no", "ext.lower", "remain_SR_secondary")],

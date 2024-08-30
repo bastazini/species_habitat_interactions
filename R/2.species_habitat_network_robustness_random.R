@@ -2,9 +2,17 @@
 
 # ---------------------------------------------------------------------------------------# 
 
-#               SPECIES  - HABITAT INTERACTION NETWORKS
 
-#     RANDOM ORDER OF CORAL REMOVAL -- SCENARIO CREATED AFTER THE 1ST ROUND OF REVIEW
+# Project: Coping with Collapse: Functional Robustness of Coral-Reef Fish Network to Simulated Cascade Extinction
+
+
+# Script 2: organize data for network analysis and produce a map (supp info)
+# (Analyzes based on "occupancy_data.RData")
+
+#   RANDOM ORDER OF CORAL REMOVAL -- SCENARIO CREATED AFTER THE 1ST ROUND OF REVIEW
+#   The other scripts (also numbered with '2' bring scenarios of degree- and vulnerability-based removal)
+
+
 
 # ---------------------------------------------------------------------------------------# 
 

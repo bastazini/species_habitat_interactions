@@ -2,7 +2,11 @@
 # --------------------------------------------------------------------------------------
 
 
-#             Trait space representation/analyses
+
+# Project: Coping with Collapse: Functional Robustness of Coral-Reef Fish Network to Simulated Cascade Extinction
+
+
+# Script 3: Trait space representation/analyses
 
 
 # --------------------------------------------------------------------------------------

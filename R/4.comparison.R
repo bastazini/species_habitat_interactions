@@ -1,10 +1,16 @@
-#         -----------------
+
+# ---------------------------------------------------------------------------------------# 
 
 
-#     comparison of scenarios
+# Project: Coping with Collapse: Functional Robustness of Coral-Reef Fish Network to Simulated Cascade Extinction
 
 
-#         -----------------
+# Script 4: Comparison of scenarios
+
+
+# ---------------------------------------------------------------------------------------# 
+
+
 require(here)
 source(here ("R", "packages.R"))
 

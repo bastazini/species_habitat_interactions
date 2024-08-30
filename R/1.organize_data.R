@@ -2,7 +2,10 @@
 # ------------------------------------------------------------------
 
 
-# script to organize data for network analysis and produce a map
+# Project: Coping with Collapse: Functional Robustness of Coral-Reef Fish Network to Simulated Cascade Extinction
+
+
+# Script 1: organize data for network analysis and produce a map (supp info)
 
 
 # ------------------------------------------------------------------
@@ -19,10 +22,9 @@ source(here ("R", "quality_funct_space_fromdist2.R"))
 source(here ("R", "functions.R"))
 
 # ----------------------------# 
-
 # load fish and coral data
-
 # ----------------------------# 
+
 
 load (here ("data",
            "Data_fish_detection_LONGO_AUED.RData"))
