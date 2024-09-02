@@ -1,6 +1,9 @@
 Coping with Collapse: Functional Robustness of Coral-Reef Fish Network
 to Simulated Cascade Extinction
 ================
+André L Luza, Mariana G Bender, Carlos EL Ferreira, Sergio R Floeter,
+Ronaldo B Francini-Filho, Guilherme O Longo, Hudson T Pinheiro, Juan P
+Quimbayo, Vinicius A G Bastazini
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <!-- badges: start -->
@@ -9,7 +12,7 @@ to Simulated Cascade Extinction
 This is a working example to run the framework developed to assess
 network functional robustness in the context of cascading extinctions.
 The example is just illustrative, and did not intend to produce the same
-results reported in the manuscript.
+results as those reported in the manuscript.
 
 The illustrated framework is depicted below. In step (1), we modeled the
 occupancy probability of fish as a function of coral and turf algae
@@ -24,35 +27,34 @@ based on Pearson’s correlation values between fish site occupancy
 probability. With the networks established, we applied a removal
 algorithm that eliminated corals and subsequently calculated the direct
 and indirect effects of coral species removal on network robustness at
-each elimination step (t0, t1, to \|A\|). Lost links are shown in red.
-In step (3), we related fish species composition and species traits at
-each elimination step. In step (4), we computed the loss in trait space
-area following corals and fish removal. The area delimited by the black
-polygon depicts the trait space area at t0, and the area delimited by
-the red polygon depicts the trait space area at t1. Finally, in step
-(5), we applied a hyperbolic function (non-linear model) to the
-robustness data, analyzing both the remaining taxonomic diversity (TD,
-represented on the first y-axis with a solid curve) and functional
-diversity (FD, represented on the second y-axis with a dashed curve)
-along the gradient of coral elimination (x-axis).
+each elimination step ($t=0,t=1, ..., |A|$). Lost links are shown in
+red. In step (3), we related fish species composition and species traits
+at each elimination step. In step (4), we computed the loss in trait
+space area following corals and fish removal. The area delimited by the
+black polygon depicts the trait space area at $t=0$, and the area
+delimited by the red polygon depicts the trait space area at $t=1$
+Finally, in step (5), we applied a hyperbolic function (non-linear
+model) to the robustness data, analyzing both the remaining taxonomic
+diversity (TD, represented on the first y-axis with a solid curve) and
+functional diversity (FD, represented on the second y-axis with a dashed
+curve) along the gradient of coral elimination (x-axis).
 
 <img src="output/framework.png" width="100%" height="100%" style="display: block; margin: auto;" />
-Study framework. Source of pictures to draw the silhouettes: coral:
-picture by Vinicius J Giglio. Fish: FishBase.
+Study framework. Source of pictures to draw the silhouettes: coral -
+picture by Vinicius J Giglio. Fish - FishBase.
 
 <br> <br>
 
-To illustrate the approach, we will simulate some data. Consider a set
-of 8 species in the Partite A, 42 species in the Partite B, and 21
+We will simulate some data to illustrate the approach. Consider a set of
+eight species in the Partite A, 42 species in the Partite B, and 21
 species in the Partite C (as our empirical data). The subnetwork 1 will
 be composed by the Partites A and B, and the subnetwork 2 will be
-composed by the Partities B and C. We will gather values resembling fish
-occupancy probability/co-occurrence from a $Beta$ distribution with
-shape parameters $a=0.5$ and $b=1$. This will produce a distribution
-constrained between $[0,1]$, with most species showing low occupancy
-probabilities relative to the species in partite A. We used the same
-parameters to simulate data in partite C (resembling Pearson’s
-correlations, $\rho$).
+composed by the Partites B and C. To fill matrix cells with values, we
+will gather values constrained between $[0,1]$, resembling fish
+occupancy probability ($\psi$) (subnetwork 1) and co-occurrence
+(Pearson’s correlation $\rho$) (subnetwork 2) from a $Beta$ distribution
+with shape parameters $a=0.5$ and $b=1$. This will produce a
+distribution of values high density close to zero.
 
 ``` r
 set.seed(2456)
@@ -100,11 +102,12 @@ subnetwork1_df$aff <- ifelse (subnetwork1_df$value > 0.9, 1,0)
 colnames(subnetwork1_df) <- c("coral", "fish", "value", "aff")
 ```
 
-Note that in the last step we melted the object “subnetwork_1” into
-“subnetwork1_df” to establish a binary variable depicting the
-relationship between each species in partite A and B. Now that we
+Note that in the last step we melted the object “subnetwork_1” and
+created the object “subnetwork1_df”. We did so to make this new object
+the base for filter data and to establish a binary variable depicting
+the relationship between species of partites A and B. Now that we
 produced the matrices and sorted them, we can illustrate the tripartite
-network using:
+network.
 
 ``` r
 plotweb2(data.matrix(subnetwork1),
@@ -127,11 +130,11 @@ plotweb2(data.matrix(subnetwork1),
 
 ![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
-As we already established the links between species in Partites B and C,
-we will simulate one trait data set to be used in the trait-based
-analyzes. The trait values ($n=6$ traits) of species in the partities B
-and C were gathered from Normal distribution with average $\mu=0$ and
-standard deviation $\sigma=0.2$.
+As we already established the links between species in Partites B and C
+(fish in our empirical data), we will simulate one trait data set to be
+used in the trait-based analyzes. The trait values ($n=6$ traits) of
+species in the Partites B and C were gathered from Normal distribution
+with average $\mu=0$ and standard deviation $\sigma=0.2$.
 
 ``` r
 # produce trait data
@@ -147,13 +150,13 @@ colnames(trait_data) <- paste0 ("trait", seq(1,ncol(trait_data)))
 ```
 
 After getting the trait values, we can start the trait space analyses
-based on the partites B and C (fish in our empirical data). First we
-will calculate the distances between species based on their traits, and
-run one ordination analysis (Principal Coordinate Analysis, ‘dudi.pco’
-function of the package *ade4*) to summarize these distances into
-different vectors. I will use the Gower distance (package *cluster*) as
-it enables to handle with several trait types if one needs to
-(continuous, categorical, binary traits).
+based on the Partites B and C. First we will calculate the distances
+between species based on their traits, and run one ordination analysis
+(Principal Coordinate Analysis, ‘dudi.pco’ function of the package
+*ade4*) to summarize these distances into different vectors. I will use
+the Gower distance (package *cluster*) as it enables to handle with
+several trait types if one needs to (continuous, categorical, binary
+traits).
 
 ``` r
 # trait distance matrix (gower)
@@ -167,14 +170,14 @@ pco<-dudi.pco(quasieuclid(gower_matrix), scannf=F, nf=10) # quasieuclid() transf
 ```
 
 Now we will build the complete trait space. The area of this polygon is
-the Functional Diversity-FD measure for $(t=0)$, when no fish removal
-take place. We will apply the function ‘chull’ (package *grDevices*) to
-data of the two first PCoA axes, which will link species in the
-boundaries of the trait space. Then the function ‘Polygon’ (package
-*sp*) will be used to get the polygon, enabling the calculation of the
-polygon area (FD). These two functions will also be used to group
-species and obtain FD for other groups (e.g. coral-associated fish,
-co-ocurring fish).
+the Functional Diversity-FD measure for $(t=0)$, when no species
+elimination take place. We will apply the function ‘chull’ (package
+*grDevices*) to data of the two first PCoA axes, which will link species
+located in the boundaries of the trait space. Then the function
+‘Polygon’ (package *sp*) will be used to get the polygon, enabling the
+calculation of the polygon area (FD). These two functions will also be
+used to group species and obtain FD for other groups
+(e.g. coral-associated fish, co-occurring fish).
 
 ``` r
 ##  complete trait space
@@ -188,7 +191,7 @@ a_pool <- all_pool [chull(all_pool[,1:2], y = NULL),] # its convex hull
 
 Then we can start the removal. Within the ‘lapply’ loop, there is a
 sequential selection of rows of the matrix ‘subnetwork1’. As this matrix
-was sorted before, the selection obeys the species degree. The
+was already sorted, the selection obeys the degree criterion. The
 ‘rm_corals’ object define which species in partite A will be selected
 (from the species highest to the lower degree). Then we selected the
 species of partite B which have affinity with the selected species
@@ -197,8 +200,8 @@ species of partite B which have affinity with the selected species
 After we create, the ‘RFS’ object contains the result of the division of
 the difference between the complete and simplified trait space area by
 the complete trait space area. If no trait space was lost then $RFS=1$.
-As we were interested in how much remains, we calculated $1-RFS$ to have
-in our output list ‘res’.
+As we were interested in how much remains, we calculated $1-RFS$ to be
+stored in our output ‘res’.
 
 ``` r
 # --------------------------------------
@@ -248,10 +251,11 @@ RFS_corals <- lapply (seq (1, nspA), function (ncoral) {
 })
 ```
 
-By running this we will have a list with length equal to the number of
-species in partite A. These are the losses in partite B
-(coral-associated) produced by the direct losses of species in partite A
-(corals). Then we melt the list to have the relevant results.
+By running this we will end up with a list with length equal to the
+number of species in partite A. This output comprise the simulated
+losses in partite B (coral-associated) produced by the direct losses of
+species in partite A (corals). Then we melt the list to have the
+relevant results.
 
 ``` r
 # total functional loss
@@ -271,9 +275,9 @@ loss_corals <- lapply  (RFS_corals, function (i) 1-length(i$corals.removed)/nspA
 loss_corals<- do.call (rbind, loss_corals)
 ```
 
-We now start creating a data set for robustness analyzes. First, we
-create data for $t=0$ where no loss take place. Subsequently we bind to
-this data frame the results of the direct species loss.
+We now proceed by creating a data frame for robustness analyzes. First,
+we create data for $t=0$ where no loss take place yet. Subsequently we
+bind to this data frame the results of the direct species loss.
 
 ``` r
 # analysis dataset
@@ -306,9 +310,8 @@ Now we will simulate the influence of the indirect loss of corals. We
 start by selecting the species in partite A (corals) and B
 (coral-associated fish) to be removed. Then we select associated fish
 plus those associated with them by checking which species has the sum of
-values (Pearson’s correlation $\rho$) of $\rho>0$. These species will be
-removed and the remaining proportion of species richness (SR) and FD
-will be calculated.
+$\rho>0$. These species will be removed and the remaining proportion of
+species richness (SR) and FD calculated.
 
 ``` r
 # simulating secondary (indirect) extinctions -----------------
@@ -360,8 +363,8 @@ RFS_corals_secondary_extinctions <- lapply (seq (1, nspA), function (ncoral) {
 })
 ```
 
-As before, we selected the results we want, melt the lists, and bind
-into the data frame for robustness analyses.
+As before, we selected the results we want, melt the lists, and bind to
+the data frame for robustness analyses.
 
 ``` r
 # total loss
@@ -387,10 +390,11 @@ analysis_dataset<-cbind(analysis_dataset,
         )
 ```
 
-Next we present the function and fit the non-linear model to the data.
-The object that the function requires is a data frame with the
-proportion of species remaining in partite A and the remaning SR or FD
-in the other partites.
+Next we present the function and fit the non-linear model to the data
+(by Vinicius AG Bastazini). The object that the function requires is a
+data frame with the proportion of species remaining in partite A and the
+remaining SR or FD in the other partites. The function also have a
+function to plot.
 
 ``` r
 # run function of hyperbolic curve -------------------------------------------------
@@ -456,7 +460,7 @@ After fitting the model to the data we bind the predictions to the
 analysis dataset, and estimated the network robustness by integrating
 (summing up) infinitesimally small values of the spline interpolated
 using the fitted hyperbolic function applied to the minimum and maximum
-of the proportion of removed corals (object ‘loss_corals’).
+of the proportion of removed partite A species/corals.
 
 ``` r
 # predictions
@@ -513,7 +517,25 @@ analysis_dataset$pred_remain_RFS_secondary <- hyper_curve_secondary_RFS$preds
 
     ## 0.7931465 with absolute error < 1.9e-05
 
-Finally, we can plot the robustness curves and the trait space.
+``` r
+# create a table to show robustness results
+require(dplyr); require(knitr)
+data.frame(rbind(SR_direct = SR1$value,
+           SR_indirect = SR2$value,
+           FD_direct = FD1$value,
+           FD_indirect = FD2$value
+           )) %>%
+  kable(format = "pipe",col.names = "Robustness (R)")
+```
+
+|             | Robustness (R) |
+|:------------|---------------:|
+| SR_direct   |      0.8899325 |
+| SR_indirect |      0.6036838 |
+| FD_direct   |      0.9171699 |
+| FD_indirect |      0.7931465 |
+
+Finally, we can now plot the robustness curves and the trait space.
 
 ``` r
 # plot
@@ -619,7 +641,7 @@ ggplot(analysis_dataset[order(analysis_dataset$remain_coral,decreasing=F),],
 
 Attack Tolerance Curves (ATC). The shaded area below each curve depicts
 the hyperbolic function curve fitted to the data shown in the two
-Y-axes. Yellow tones represent losses in taxonomic diversity, while grey
-and black represent losses in functional diversity. Diamonds and circles
-denote the direct and indirect effects of coral species extinction on
-such biodiversity dimensions.
+Y-axes. Yellow tones represent losses in functional diversity, while
+grey and black represent losses in taxonomic diversity. Diamonds and
+circles denote the direct and indirect effects of coral species
+extinction on such biodiversity dimensions.
