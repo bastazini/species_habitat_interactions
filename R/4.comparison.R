@@ -241,13 +241,13 @@ SR1 <- ggplot(analysis_dataset_random,
                size=1.2, 
                col = NA,
                alpha=0.01,
-               fill="orange") + 
-  geom_line( aes(y=pred_remain_SR_all),linetype=1,size=1.2, col= "orange") + 
+               fill="gray50") + 
+  geom_line( aes(y=pred_remain_SR_all),linetype=1,size=1.2, col= "gray50") + 
   
   geom_point( aes(y=remain_all),  
               size=3,
               stroke=2,
-              col="orange",
+              col="gray50",
               fill="white",
               shape=23,
               alpha=1
@@ -279,7 +279,7 @@ SR2 <- ggplot(analysis_dataset_random,
               aes (x= (1-remain_coral), y = remain_fish_associated,group=run)) +
   
   # taxonomic diversity
-  geom_line( aes(y=pred_remain_SR_secondary),linetype=1,size=1.2,col="orange3",alpha=0.3) +
+  geom_line( aes(y=pred_remain_SR_secondary),linetype=1,size=1.2,col="black",alpha=0.3) +
   
   geom_ribbon( aes(ymax=pred_remain_SR_secondary),
                ymin=0,
@@ -287,11 +287,11 @@ SR2 <- ggplot(analysis_dataset_random,
                size=1.2, 
                col = NA,
                alpha=0.01,
-               fill="orange3") + 
+               fill="black") + 
   geom_point( aes(y=remain_SR_secondary),
               size=3,
               stroke=2,
-              col="orange3",
+              col="black",
               fill="white",
               shape=21,
               alpha=1) +
@@ -321,7 +321,7 @@ FD1 <- ggplot(analysis_dataset_random,
   
   # functional diversity
   # direct loss
-  geom_line( aes(y=pred_remain_RFS_associated),linetype=1,size=1.2,col="gray50",alpha=0.2) + 
+  geom_line( aes(y=pred_remain_RFS_associated),linetype=1,size=1.2,col="orange",alpha=0.2) + 
   
   
 
@@ -331,12 +331,12 @@ FD1 <- ggplot(analysis_dataset_random,
                size=1.2, 
                col = NA,
                alpha=0.01,
-               fill="gray50") + 
+               fill="orange") + 
   
   geom_point( aes(y=remain_FD),
               size=3,
               stroke=2,
-              col="gray50",
+              col="orange",
               fill="white",
               shape=23,
               alpha=1) +
@@ -366,18 +366,18 @@ FD2 <- ggplot(analysis_dataset_random,
               aes (x= (1-remain_coral), y = remain_fish_associated,group=run)) +
   
   # functional diversity
-  geom_line( aes(y=pred_remain_RFS_secondary),linetype=1,size=1.2, col = "black") + 
+  geom_line( aes(y=pred_remain_RFS_secondary),linetype=1,size=1.2, col = "orange3") + 
   geom_ribbon( aes(ymax=pred_remain_RFS_secondary),
                ymin=0,
                linetype=1,
                size=1.2, 
                col = NA,
                alpha=0.01,
-               fill="black") + 
+               fill="orange3") + 
   geom_point( aes(y=remain_RFS_secondary),
               size=3,
               stroke=2,
-              col="black",
+              col="orange3",
               fill="white",
               shape=21,
               alpha=1) + 
