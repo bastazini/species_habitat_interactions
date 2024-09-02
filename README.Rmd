@@ -28,7 +28,7 @@ knitr::include_graphics("output/framework.png")
 
 
 ```
-*Fig. 1: Study framework. Source of pictures to draw silhouette: coral: picture by Vinicius J Giglio. Fish: FishBase.* 
+**Study framework. Source of pictures to draw the silhouettes: coral: picture by Vinicius J Giglio. Fish: FishBase.**
 
 To illustrate the approach, we will simulate some data. Consider a set of 8 species in the Partite A, 42 species in the Partite B, and 21 species in the Partite C (as our empirical data). The subnetwork 1 will be composed by the Partites A and B, and the subnetwork 2 will be composed by the Partities B and C. We will gather values resembling fish occupancy probability/co-occurrence from a $Beta$ distribution with shape parameters $a=0.5$ and $b=1$. This will produce a distribution constrained between $[0,1]$, with most species showing low occupancy probabilities relative to the species in partite A. We used the same parameters to simulate data in partite C (resembling Pearson's correlations, $\rho$).
 
@@ -546,6 +546,5 @@ ggplot(analysis_dataset[order(analysis_dataset$remain_coral,decreasing=F),],
 <br>
 <br>
 
-Attack Tolerance Curves (ATC). The shaded area below each curve depicts the hyperbolic function curve fitted to the data shown in the two Y-axes.Yellow tones represent losses in taxonomic diversity, while grey and black represent losses in functional diversity. Diamonds and circles denote the direct and indirect effects of coral species extinction on such biodiversity dimensions. 
-
+**Attack Tolerance Curves (ATC). The shaded area below each curve depicts the hyperbolic function curve fitted to the data shown in the two Y-axes. Yellow tones represent losses in taxonomic diversity, while grey and black represent losses in functional diversity. Diamonds and circles denote the direct and indirect effects of coral species extinction on such biodiversity dimensions.**
 
