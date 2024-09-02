@@ -37,8 +37,10 @@ diversity (FD, represented on the second y-axis with a dashed curve)
 along the gradient of coral elimination (x-axis).
 
 <img src="output/framework.png" width="100%" height="100%" style="display: block; margin: auto;" />
-*Fig. 1: Study framework. Source of pictures to draw silhouette: coral:
-picture by Vinicius J Giglio. Fish: FishBase.*
+**Study framework. Source of pictures to draw the silhouettes: coral:
+picture by Vinicius J Giglio. Fish: FishBase.**
+
+<br> <br>
 
 To illustrate the approach, we will simulate some data. Consider a set
 of 8 species in the Partite A, 42 species in the Partite B, and 21
@@ -615,9 +617,9 @@ ggplot(analysis_dataset[order(analysis_dataset$remain_coral,decreasing=F),],
 
 <br> <br>
 
-Attack Tolerance Curves (ATC). The shaded area below each curve depicts
-the hyperbolic function curve fitted to the data shown in the two
-Y-axes.Yellow tones represent losses in taxonomic diversity, while grey
-and black represent losses in functional diversity. Diamonds and circles
-denote the direct and indirect effects of coral species extinction on
-such biodiversity dimensions.
+**Attack Tolerance Curves (ATC). The shaded area below each curve
+depicts the hyperbolic function curve fitted to the data shown in the
+two Y-axes. Yellow tones represent losses in taxonomic diversity, while
+grey and black represent losses in functional diversity. Diamonds and
+circles denote the direct and indirect effects of coral species
+extinction on such biodiversity dimensions.**
