@@ -11,7 +11,7 @@ Quimbayo, Vinicius A G Bastazini
 
 This is a working example to run the framework developed to assess
 network functional robustness in the context of cascading extinctions.
-The example is just illustrative, and did not intend to produce the same
+The example is just illustrative, and it is not intend to produce the same
 results as those reported in the manuscript.
 
 The illustrated framework is depicted below. In step (1), we modeled the
@@ -34,7 +34,7 @@ space area following corals and fish removal. The area delimited by the
 black polygon depicts the trait space area at $t=0$, and the area
 delimited by the red polygon depicts the trait space area at $t=1$
 Finally, in step (5), we applied a hyperbolic function (non-linear
-model) to the robustness data, analyzing both the remaining taxonomic
+model) to the extinction simulation, analyzing both the remaining taxonomic
 diversity (TD, represented on the first y-axis with a solid curve) and
 functional diversity (FD, represented on the second y-axis with a dashed
 curve) along the gradient of coral elimination (x-axis).
@@ -54,7 +54,8 @@ will gather values constrained between $[0,1]$, resembling fish
 occupancy probability ($\psi$) (subnetwork 1) and co-occurrence
 (Pearson’s correlation $\rho$) (subnetwork 2) from a $Beta$ distribution
 with shape parameters $a=0.5$ and $b=1$. This will produce a
-distribution of values high density close to zero.
+distribution of values high density close to zero. 
+Note that in this example, we apply the algorithm to two sub-networks, comprising two bipartite networks, as done in our paper. However, the method for calculating functional robustness can be directly applied to bipartite networks. 
 
 ``` r
 set.seed(2456)
@@ -189,7 +190,7 @@ all_pool <- cbind (pco$li[,1:2],
 a_pool <- all_pool [chull(all_pool[,1:2], y = NULL),] # its convex hull
 ```
 
-Then we can start the removal. Within the ‘lapply’ loop, there is a
+Then we can start the process of removing species form the network. Within the ‘lapply’ loop, there is a
 sequential selection of rows of the matrix ‘subnetwork1’. As this matrix
 was already sorted, the selection obeys the degree criterion. The
 ‘rm_corals’ object define which species in partite A will be selected
@@ -197,10 +198,10 @@ was already sorted, the selection obeys the degree criterion. The
 species of partite B which have affinity with the selected species
 (‘aff==1 & coral %in% rm_corals’), define the group of species (using
 ‘chull’), and calculate FD (using ‘Polygon’ and extracting the ‘@area’).
-After we create, the ‘RFS’ object contains the result of the division of
+The ‘RFS’ object contains the result of the division of
 the difference between the complete and simplified trait space area by
 the complete trait space area. If no trait space was lost then $RFS=1$.
-As we were interested in how much remains, we calculated $1-RFS$ to be
+As we were interested in how much of the trait space remains, we calculated $1-RFS$ to be
 stored in our output ‘res’.
 
 ``` r
@@ -252,7 +253,7 @@ RFS_corals <- lapply (seq (1, nspA), function (ncoral) {
 ```
 
 By running this we will end up with a list with length equal to the
-number of species in partite A. This output comprise the simulated
+number of species in partite A. This output comprises the simulated
 losses in partite B (coral-associated) produced by the direct losses of
 species in partite A (corals). Then we melt the list to have the
 relevant results.
